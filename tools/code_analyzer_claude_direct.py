@@ -1,9 +1,8 @@
 """
-Code Analyzer - Usa Vertex AI + Gemini per analizzare SQL e proporre modifiche
+Code Analyzer - Usa Anthropic Claude API diretta per analizzare SQL
 """
 
-import vertexai
-from vertexai.generative_models import GenerativeModel, GenerationConfig
+import anthropic
 from typing import Dict, List
 import json
 from dataclasses import dataclass
@@ -34,26 +33,19 @@ class CodeAnalysisResult:
 
 
 class CodeAnalyzer:
-    """Analizza codice SQL usando Vertex AI + Gemini"""
+    """Analizza codice SQL usando Anthropic Claude API"""
     
-    def __init__(self, project_id: str, location: str = "us-central1", model_name: str = None):
+    def __init__(self, api_key: str, model_name: str = "claude-sonnet-4-20250514"):
         """
-        Inizializza l'analyzer con Vertex AI
+        Inizializza l'analyzer con Claude API
         
         Args:
-            project_id: ID progetto GCP
-            location: Regione GCP (default: us-central1)
-            model_name: Nome del modello Gemini (default: gemini-1.5-pro)
+            api_key: Anthropic API key
+            model_name: Nome del modello Claude
         """
-        self.project_id = project_id
-        self.location = location
-        self.model_name = model_name or "gemini-3-flash-preview"
-        
-        # Inizializza Vertex AI
-        vertexai.init(project=project_id, location=location)
-        
-        # Inizializza modello Gemini
-        self.model = GenerativeModel(self.model_name)
+        self.api_key = api_key
+        self.model_name = model_name
+        self.client = anthropic.Anthropic(api_key=api_key)
     
     def analyze_sql(
         self,
@@ -75,9 +67,9 @@ class CodeAnalyzer:
             CodeAnalysisResult con problemi e proposte
         """
         
-        print(f"🤖 Analisi SQL con Gemini via Vertex AI...")
+        print(f"🤖 Analisi SQL con Claude API...")
         
-        # Costruisci il prompt per Gemini
+        # Costruisci il prompt per Claude
         prompt = self._build_analysis_prompt(
             sql_code=sql_code,
             brb_context=brb_context,
@@ -85,25 +77,25 @@ class CodeAnalyzer:
             etl_name=etl_name
         )
         
-        # Configurazione per output JSON strutturato
-        generation_config = GenerationConfig(
-            temperature=0.2,  # Bassa temperatura per output più deterministico
-            max_output_tokens=8000,
-        )
-        
-        # Chiama Gemini via Vertex AI
+        # Chiama Claude API
         import time
         start_time = time.time()
         
-        response = self.model.generate_content(
-            prompt,
-            generation_config=generation_config
+        response = self.client.messages.create(
+            model=self.model_name,
+            max_tokens=8000,
+            messages=[
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ]
         )
         
         analysis_time = time.time() - start_time
         
         # Estrai il contenuto della risposta
-        response_text = response.text
+        response_text = response.content[0].text
         
         # Parse della risposta JSON
         analysis_data = self._parse_response(response_text)
@@ -144,7 +136,7 @@ class CodeAnalyzer:
         quadratura_context: str,
         etl_name: str
     ) -> str:
-        """Costruisce il prompt per Gemini"""
+        """Costruisce il prompt per Claude"""
         
         prompt = f"""Sei un esperto analista di codice SQL per ETL. Il tuo compito è analizzare il codice SQL di un ETL, confrontarlo con i requisiti di business (BRB) e i risultati di una quadratura (confronto tra vecchio e nuovo workflow), e identificare problemi e proporre correzioni.
 
@@ -208,7 +200,7 @@ Concentrati sui problemi che causano le differenze nella quadratura e sulle viol
         return prompt
     
     def _parse_response(self, response_text: str) -> Dict:
-        """Parse della risposta JSON da Gemini"""
+        """Parse della risposta JSON da Claude"""
         
         try:
             # Rimuovi eventuali markdown code blocks
@@ -250,14 +242,12 @@ if __name__ == "__main__":
     # Carica variabili d'ambiente
     load_dotenv()
     
-    print("\n🧪 Test CodeAnalyzer (Gemini)\n")
+    print("\n🧪 Test CodeAnalyzer (Claude Direct API)\n")
     
-    project_id = os.getenv('GCP_PROJECT_ID')
-    location = os.getenv('GCP_LOCATION', 'us-central1')
-    model_name = os.getenv('MODEL_NAME', 'gemini-1.5-pro')
+    api_key = os.getenv('ANTHROPIC_API_KEY')
     
-    if not project_id:
-        print("❌ Errore: GCP_PROJECT_ID non trovato in .env")
+    if not api_key:
+        print("❌ Errore: ANTHROPIC_API_KEY non trovato in .env")
         sys.exit(1)
     
     etl_name = "etl_vendite"
@@ -278,8 +268,8 @@ if __name__ == "__main__":
         ai_context = ExcelAnalyzer.format_for_ai(quadratura_analysis, brb_analysis)
         
         # 4. Analizza codice con AI
-        print(f"\n🤖 Analisi codice SQL con Gemini ({model_name})...")
-        analyzer = CodeAnalyzer(project_id=project_id, location=location, model_name=model_name)
+        print(f"\n🤖 Analisi codice SQL con Claude...")
+        analyzer = CodeAnalyzer(api_key=api_key)
         
         result = analyzer.analyze_sql(
             sql_code=data['sql'],
