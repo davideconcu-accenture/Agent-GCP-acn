@@ -1,0 +1,6 @@
+anthropic
+google-cloud-aiplatform
+google-cloud-storage
+pandas
+openpyxl
+python-dotenv
