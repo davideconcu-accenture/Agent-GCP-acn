@@ -135,13 +135,13 @@ class AgentTools:
             },
             {
                 "name": "execute_sql_query",
-                "description": "Esegue query SQL su database di test in-memory (SQLite). Usa questo per testare query, validare ipotesi sui dati, o verificare che le modifiche proposte funzionino. Il database contiene dati di esempio simulati. IMPORTANTE: Le query devono essere READ-ONLY (solo SELECT).",
+                "description": "Esegue query SQL su database di test in-memory (SQLite). Usa questo per testare query, validare ipotesi sui dati, o verificare che le modifiche proposte funzionino. Il database contiene dati di esempio simulati. IMPORTANTE: Le query devono essere READ-ONLY (solo SELECT) e DEVONO includere LIMIT (es. LIMIT 100) per motivi di sicurezza - query senza LIMIT verranno rifiutate.",
                 "input_schema": {
                     "type": "object",
                     "properties": {
                         "query": {
                             "type": "string",
-                            "description": "Query SQL da eseguire (solo SELECT)"
+                            "description": "Query SQL da eseguire (solo SELECT, DEVE includere LIMIT)"
                         },
                         "purpose": {
                             "type": "string",
@@ -444,6 +444,11 @@ Il codice che ha causato l'errore:
         print(f"🗄️  Esecuzione query SQL: {purpose}")
         
         import sqlite3
+        
+        # Auto-fix: aggiungi LIMIT se manca e la query è SELECT
+        if "LIMIT" not in query.upper() and "SELECT" in query.upper():
+            query = query.rstrip(';').rstrip() + " LIMIT 1000"
+            print(f"   ℹ️  LIMIT aggiunto automaticamente (sicurezza)")
         
         try:
             conn = sqlite3.connect(':memory:')

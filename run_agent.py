@@ -93,7 +93,7 @@ if __name__ == "__main__":
     # 🎯 CAMBIA QUI per testare diverse segnalazioni
     # ============================================
     
-    TIPO = "importi"  # ← MODIFICA QUESTA RIGA!
+    TIPO = "formattazione"  # ← MODIFICA QUESTA RIGA!
     # Opzioni: "importi", "record_mancanti", "formattazione", "performance", "generico"
     
     task = SEGNALAZIONI[TIPO]
