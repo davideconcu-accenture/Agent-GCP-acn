@@ -1,0 +1,9 @@
+.git
+.env
+*.pyc
+__pycache__
+*.log
+.DS_Store
+venv/
+*.md
+.backup

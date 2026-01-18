@@ -1,17 +1,17 @@
+# API Framework
+flask>=3.0.0
+gunicorn>=21.2.0
+
 # Google Cloud dependencies
 google-cloud-aiplatform>=1.60.0
 google-cloud-storage>=2.18.0
-vertexai>=1.60.0
 
-# Bitbucket API
-requests>=2.32.0
+# Anthropic
+anthropic>=0.39.0
 
-# Excel processing
+# Data processing
 openpyxl>=3.1.0
 pandas>=2.2.0
 
 # Environment variables
 python-dotenv>=1.0.0
-
-# Anthropic (for using Claude via Vertex AI)
-anthropic[vertex]>=0.39.0
